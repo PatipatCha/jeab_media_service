@@ -33,6 +33,14 @@ func SingleUploadImage(c *fiber.Ctx) error {
 	} else {
 		if menu == "ta" {
 			menuName = "image-ta-menu"
+		} else if menu == "profile" {
+			menuName = "image-profile-menu"
+		} else if menu == "vms" {
+			menuName = "image-vms-menu"
+		} else if menu == "patrol" {
+			menuName = "image-patrol-menu"
+		} else if menu == "project" {
+			menuName = "image-project"
 		} else {
 			return c.JSON(fiber.Map{"user_id": user_id, "data": nil, "message": "Menu NotFound"})
 		}
