@@ -1,0 +1,32 @@
+[
+    {
+        "menu": "ta",
+        "image_name": "stg-image-ta",
+        "pdf_name": "stg-pdf-ta"
+    },
+    {
+        "menu": "profile",
+        "image_name": "stg-image-profile",
+        "pdf_name": "stg-pdf-profile"
+    },
+    {
+        "menu": "vms",
+        "image_name": "stg-image-vms",
+        "pdf_name": "stg-pdf-vms"
+    },
+    {
+        "menu": "project",
+        "image_name": "stg-image-project",
+        "pdf_name": "stg-pdf-project"
+    },
+    {
+        "menu": "leave",
+        "image_name": "stg-image-leave",
+        "pdf_name": "stg-pdf-leave"
+    },
+    {
+        "menu": "patrol",
+        "image_name": "stg-image-patrol",
+        "pdf_name": "stg-pdf-patrol"
+    }
+]

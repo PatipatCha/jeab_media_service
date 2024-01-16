@@ -10,7 +10,7 @@ func SetupApiRoutes(app *fiber.App, store *session.Store) {
 
 	// * Single Image Upload
 	singleImgUpload := app.Group("/api/v1")
-	singleImgUpload.Post("/image-upload", controllers.SingleUploadImage)
-	singleImgUpload.Get("/image-get", controllers.ListBlobsInContainer)
+	singleImgUpload.Post("/upload", controllers.SingleUploadImageHandler)
+	// singleImgUpload.Get("/image", controllers.ListBlobsInContainer)
 
 }

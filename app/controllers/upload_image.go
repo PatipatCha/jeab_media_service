@@ -3,75 +3,58 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/gofiber/fiber/v2"
+	"github.com/lab/tests/app/services"
 )
 
-func handleError(err error) {
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-}
-
-func SingleUploadImage(c *fiber.Ctx) error {
-
-	// Check UserID
-	user_id := c.FormValue("user_id")
-	if user_id == "" {
-		return c.JSON(fiber.Map{"user_id": user_id, "data": nil, "message": "USER ID NotFound"})
+func SingleUploadImageHandler(c *fiber.Ctx) error {
+	res := fiber.Map{
+		"data":    fiber.Map{},
+		"message": "",
 	}
 
-	// Check Menu
-	var menuName string
 	menu := c.FormValue("menu")
 	if menu == "" {
-		return c.JSON(fiber.Map{"user_id": user_id, "data": nil, "message": "Menu IS NULL"})
-	} else {
-		if menu == "ta" {
-			menuName = "image-ta-menu"
-		} else if menu == "profile" {
-			menuName = "image-profile-menu"
-		} else if menu == "vms" {
-			menuName = "image-vms-menu"
-		} else if menu == "patrol" {
-			menuName = "image-patrol-menu"
-		} else if menu == "project" {
-			menuName = "image-project"
-		} else {
-			return c.JSON(fiber.Map{"user_id": user_id, "data": nil, "message": "Menu NotFound"})
-		}
-	}
-
-	// กำหนดค่าบัญชี Azure Storage
-	accountName := "storagemasters"
-	accountKey := "DY3+F5+OP8HTH6QloogHjKPnxV8Vo/bD8t+ZEPXgfTSHLp8bt8L/ZBsJsHrPp5r2FBzw1o2qoKRr+AStM4Z/1g=="
-	containerName := menuName
-
-	// กำหนดค่าการรับรองความถูกต้อง
-	credential, err := azblob.NewSharedKeyCredential(accountName, accountKey)
-	if err != nil {
-		log.Fatal(err)
+		res["message"] = "Menu IS NULL"
+		return c.Status(fiber.StatusInternalServerError).JSON(res)
 	}
 
 	// รับไฟล์ภาพจากคำขอ
 	file, err := c.FormFile("file")
 	if err != nil {
-		return err
+		res["message"] = "File IS NULL"
+		return c.Status(fiber.StatusInternalServerError).JSON(res)
+	}
+
+	// กำหนดค่าบัญชี Azure Storage
+	accountName := "storagemasters"
+	accountKey := "DY3+F5+OP8HTH6QloogHjKPnxV8Vo/bD8t+ZEPXgfTSHLp8bt8L/ZBsJsHrPp5r2FBzw1o2qoKRr+AStM4Z/1g=="
+
+	// กำหนดค่าการรับรองความถูกต้อง
+	credential, err := azblob.NewSharedKeyCredential(accountName, accountKey)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
 	}
 
 	// เปิดไฟล์ภาพจากคำขอ
 	srcFile, err := file.Open()
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
 	}
+
 	defer srcFile.Close()
 
 	// ใช้ชื่อไฟล์เริ่มต้นหรือเลือกชื่อที่ต้องการ
 	blobName := file.Filename
+
+	file_type, containerName, err := services.DetectContentTypeFromHeader(file, menu)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
+	}
 
 	// อัปโหลดไฟล์จาก srcFile ไปยัง block blob
 	u, _ := url.Parse(fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s", accountName, containerName, blobName))
@@ -80,20 +63,21 @@ func SingleUploadImage(c *fiber.Ctx) error {
 	uploadOptions := azblob.UploadStreamToBlockBlobOptions{
 		BufferSize: 8 * 1024 * 1024, // ขนาดของบล็อก (8 MB)
 		MaxBuffers: 16,              // จำนวนการอัปโหลดบล็อกแบบพร้อมกัน
+		BlobHTTPHeaders: azblob.BlobHTTPHeaders{
+			ContentType: file_type,
+		},
 	}
 	_, err = azblob.UploadStreamToBlockBlob(context.TODO(), srcFile, blockBlobURL, uploadOptions)
-	handleError(err)
-
-	output := fiber.Map{
-		"user_id": user_id,
-		"data":    nil,
-		"message": os.Getenv("MESSAGE_UPLOAD_IMAGE_SUCCESS"),
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(err)
 	}
 
-	return c.JSON(output)
+	res["message"] = os.Getenv("MESSAGE_UPLOAD_IMAGE_SUCCESS")
+
+	return c.JSON(res)
 }
 
-// os.Getenv("VAILD_USERID_NOT_FOUND")
+/*
 
 func GetBlobURL(containerURL azblob.ContainerURL, blobName string) string {
 	blobURL := containerURL.NewBlobURL(blobName)
@@ -143,3 +127,4 @@ func ListBlobsInContainer(c *fiber.Ctx) error {
 		"blobs": blobInfos,
 	})
 }
+*/
